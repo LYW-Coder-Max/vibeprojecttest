@@ -347,6 +347,13 @@
             const feedContainer = document.getElementById('feedContent');
             feedContainer.innerHTML = ""; // Clear current feed
 
+            // Defensive check for slideData
+            if (!slideData) {
+                console.error("slideData is not initialized!");
+                feedContainer.innerHTML = `<div class="empty-state">Error: Data not available.</div>`;
+                return;
+            }
+
             const posts = slideData[currentSlide] || [];
 
             if (posts.length === 0) {
@@ -359,16 +366,16 @@
                 postDiv.className = 'post-card';
                 
                 let imgHtml = "";
-                if (post.img) {
+                if (post && post.img) {
                     imgHtml = `<img src="${post.img}" class="post-img" alt="User upload">`;
                 }
 
                 postDiv.innerHTML = `
                     <div class="post-meta">
                         <span>Slide ${currentSlide}</span>
-                        <span>${post.time}</span>
+                        <span>${post && post.time ? post.time : ''}</span>
                     </div>
-                    <div class="post-text">${post.text}</div>
+                    <div class="post-text">${post && post.text ? post.text : ''}</div>
                     ${imgHtml}
                 `;
                 feedContainer.appendChild(postDiv);
