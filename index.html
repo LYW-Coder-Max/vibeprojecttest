@@ -120,7 +120,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: start; /* Adjusted for better layout */
             background-color: #333;
             padding: 20px;
         }
@@ -203,7 +203,7 @@
                 <div class="slide-indicator">Slide <span id="currentSlideNum">1</span> / <span id="totalSlidesNum">1</span></div>
                 <button class="nav-btn" onclick="changeSlide(1)">❯</button>
             </div>
-            <p class="nav-instruction">Note: Use the buttons above to sync notes with the current slide. You must advance the slides within the Google Slides frame manually.</p>
+            <p class="nav-instruction">Use the buttons to navigate the slides and sync your notes.</p>
         </div>
 
     </div>
@@ -212,6 +212,8 @@
         let currentSlide = 1;
         let totalSlides = 1;
         let slideData = {}; // Format: { 1: { notes: [...] } }
+        let presentationBaseUrl = '';
+        let embedCodeTemplate = '';
 
         document.addEventListener('DOMContentLoaded', updateUI);
 
@@ -239,28 +241,58 @@
                 return;
             }
             if (isNaN(numSlides) || numSlides < 1) {
-                alert('Please enter a valid total number of slides.');
+                alert('Please enter a a valid total number of slides.');
                 return;
             }
 
-            slideViewer.innerHTML = embedCode;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(embedCode, 'text/html');
+            const iframe = doc.querySelector('iframe');
+
+            if (!iframe) {
+                alert('Invalid iframe code.');
+                return;
+            }
+
+            let src = iframe.src;
+            const url = new URL(src);
+            url.searchParams.delete('slide');
+            presentationBaseUrl = url.toString();
+
+            iframe.removeAttribute('src');
+            iframe.id = 'slide-iframe';
+            embedCodeTemplate = iframe.outerHTML;
+
+            slideViewer.innerHTML = embedCodeTemplate;
+            
             totalSlides = numSlides;
             currentSlide = 1;
             
-            // Initialize data structure for the new presentation
             slideData = {};
             for (let i = 1; i <= totalSlides; i++) {
                 slideData[i] = { notes: [] };
             }
-
+            
+            updateIframeSource();
             updateUI();
+
         }
 
         function changeSlide(direction) {
             const newSlide = currentSlide + direction;
             if (newSlide >= 1 && newSlide <= totalSlides) {
                 currentSlide = newSlide;
+                updateIframeSource();
                 updateUI();
+                
+            }
+        }
+
+        function updateIframeSource() {
+            const iframe = document.getElementById('slide-iframe');
+            if (iframe && presentationBaseUrl) {
+                const newSrc = presentationBaseUrl + (presentationBaseUrl.includes('?') ? '&' : '?') + 'slide=id.p' + currentSlide;
+                iframe.src = newSrc;
             }
         }
 
@@ -299,7 +331,7 @@
             const fileInput = document.getElementById('postImage');
 
             const text = textInput.value.trim();
-            const targetSlideNum = parseInt(slideInput..value) || currentSlide;
+            const targetSlideNum = parseInt(slideInput.value) || currentSlide;
 
             if (!text && !fileInput.files[0]) {
                 alert("Please enter text or select an image.");
@@ -329,7 +361,6 @@
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             slideData[slideNum].notes.push({ text, img: imgData, time: timeString });
 
-            // Reset inputs
             document.getElementById('postText').value = '';
             document.getElementById('postImage').value = '';
 
