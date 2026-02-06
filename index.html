@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TA Slide Assistant</title>
+    <title>Teaching Assistant</title>
     
     <style>
         :root {
@@ -20,24 +20,27 @@
         body { background-color: var(--bg-color); height: 100vh; display: flex; flex-direction: column; }
 
         header {
-            background-color: var(--primary-color);
+            background: linear-gradient(rgba(44, 62, 80, 0.7), rgba(44, 62, 80, 0.7)), url('https://images.pexels.com/photos/159775/library-la-trobe-university-study-students-159775.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+            background-size: cover;
+            background-position: center;
             color: white;
-            padding: 1rem 1.5rem;
-            display: flex;
-            flex-wrap: wrap; /* Allow wrapping for smaller screens */
-            gap: 15px;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             z-index: 10;
         }
 
-        header h1 { font-size: 1.2rem; margin-right: auto; }
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
 
         .embed-container {
             display: flex;
             gap: 10px;
             align-items: center;
+            margin-bottom: 15px; /* Space between controls and slide viewer */
         }
 
         .embed-container input {
@@ -45,23 +48,25 @@
             border-radius: 4px;
             border: 1px solid #ccc;
             font-size: 0.9rem;
+            background: #fff;
+            color: #333;
         }
         
         #embedCodeInput { min-width: 300px; }
         #totalSlidesInput { width: 120px; }
 
         .btn {
-            border: 2px solid white;
+            border: none;
             color: white;
-            background-color: transparent;
+            background-color: var(--accent-color);
             padding: 8px 15px;
-            border-radius: 8px;
+            border-radius: 4px;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: 0.3s;
+            transition: background-color 0.3s;
         }
 
-        .btn:hover { background-color: white; color: var(--primary-color); }
+        .btn:hover { background-color: #357ABD; }
 
         .main-container { display: flex; flex: 1; overflow: hidden; }
 
@@ -85,16 +90,26 @@
 
         .post-meta { font-size: 0.8rem; color: #888; margin-bottom: 5px; }
         .post-text { line-height: 1.4; }
+        .post-img { max-width: 100%; border-radius: 4px; margin-top: 10px; }
 
         .input-area { padding: 15px; background: white; border-top: 1px solid #ddd; }
 
-        .input-area input, .input-area button {
+        .input-area .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-area input[type="text"], .input-area input[type="number"], .input-area input[type="file"], .input-area button {
             width: 100%;
             padding: 10px;
-            margin-bottom: 10px;
             border-radius: 4px;
             border: 1px solid #ccc;
+            margin-bottom: 10px; /* Reset margin for grouped elements */
         }
+        
+        .input-area input[type="number"] { width: 100px; }
+        .input-area input[type="file"] { padding: 5px; font-size: 0.9rem; }
 
         .submit-btn { background-color: var(--accent-color); color: white; border: none; cursor: pointer; font-weight: bold; }
 
@@ -141,16 +156,20 @@
         .nav-instruction { color: #aaa; font-size: 0.8rem; text-align: center; margin-top: 5px; }
 
     </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0RKKSKVED1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-0RKKSKVED1');
+    </script>
 </head>
 <body>
 
     <header>
-        <h1>TA Dashboard</h1>
-        <div class="embed-container">
-            <input type="text" id="embedCodeInput" placeholder="Paste Google Slides <iframe> embed code here">
-            <input type="number" id="totalSlidesInput" placeholder="Total Slides">
-            <button class="btn" onclick="loadSlides()">Load</button>
-        </div>
+        <h1>Teaching Assistant</h1>
     </header>
 
     <div class="main-container">
@@ -161,12 +180,21 @@
                 <div class="empty-state">Load a presentation to begin.</div>
             </div>
             <div class="input-area">
-                <input type="text" id="postText" placeholder="Enter note for current slide...">
+                <input type="text" id="postText" placeholder="Enter note or question...">
+                 <div class="input-group">
+                    <input type="number" id="targetSlide" placeholder="Slide #" min="1">
+                    <input type="file" id="postImage" accept="image/*">
+                </div>
                 <button class="submit-btn" onclick="addPost()">Add Note</button>
             </div>
         </div>
 
         <div class="slide-display">
+            <div class="embed-container">
+                <input type="text" id="embedCodeInput" placeholder="Paste Google Slides <iframe> embed code here">
+                <input type="number" id="totalSlidesInput" placeholder="Total Slides">
+                <button class="btn" onclick="loadSlides()">Load</button>
+            </div>
             <div class="slide-viewer" id="slideViewer">
                 <div class="empty-state" style="color:#ccc;">1. Open Google Slides &gt; File &gt; Share &gt; Publish to web.<br>2. Copy the &lt;iframe&gt; code and paste it above.</div>
             </div>
@@ -195,6 +223,7 @@
         function updateSlideCounters() {
             document.getElementById('currentSlideNum').innerText = currentSlide;
             document.getElementById('totalSlidesNum').innerText = totalSlides;
+            document.getElementById('targetSlide').value = currentSlide;
         }
 
         function loadSlides() {
@@ -249,9 +278,16 @@
             notes.forEach(note => {
                 const postDiv = document.createElement('div');
                 postDiv.className = 'post-card';
+                
+                let imgHtml = '';
+                if (note.img) {
+                    imgHtml = `<img src="${note.img}" class="post-img" alt="User upload">`;
+                }
+
                 postDiv.innerHTML = `
                     <div class="post-meta"><span>${note.time}</span></div>
                     <div class="post-text">${note.text}</div>
+                    ${imgHtml}
                 `;
                 feedContainer.appendChild(postDiv);
             });
@@ -259,22 +295,49 @@
 
         function addPost() {
             const textInput = document.getElementById('postText');
-            const text = textInput.value;
+            const slideInput = document.getElementById('targetSlide');
+            const fileInput = document.getElementById('postImage');
 
-            if (!text || !slideData[currentSlide]) {
-                alert("Please enter a note and make sure a presentation is loaded.");
+            const text = textInput.value.trim();
+            const targetSlideNum = parseInt(slideInput..value) || currentSlide;
+
+            if (!text && !fileInput.files[0]) {
+                alert("Please enter text or select an image.");
+                return;
+            }
+            if (!slideData[targetSlideNum]) {
+                alert("The specified slide number does not exist.");
                 return;
             }
 
-            if (!slideData[currentSlide].notes) {
-                slideData[currentSlide].notes = [];
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    savePost(targetSlideNum, text, e.target.result);
+                }
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                savePost(targetSlideNum, text, null);
+            }
+        }
+
+        function savePost(slideNum, text, imgData) {
+            if (!slideData[slideNum].notes) {
+                slideData[slideNum].notes = [];
             }
 
             const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            slideData[currentSlide].notes.push({ text, time: timeString });
+            slideData[slideNum].notes.push({ text, img: imgData, time: timeString });
 
-            textInput.value = '';
-            renderFeed();
+            // Reset inputs
+            document.getElementById('postText').value = '';
+            document.getElementById('postImage').value = '';
+
+            if (slideNum === currentSlide) {
+                renderFeed();
+            } else {
+                alert(`Note added to Slide ${slideNum}`);
+            }
         }
 
     </script>
