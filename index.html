@@ -1,14 +1,447 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TA Slide Assistant</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --sidebar-width: 350px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 { font-size: 1.2rem; }
+        
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .btn {
+            border: 2px solid white;
+            color: white;
+            background-color: transparent;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn:hover { background-color: white; color: var(--primary-color); }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden; /* Prevents full page scroll */
+        }
+
+        /* LEFT SIDE: Dynamic Feed */
+        .feed-panel {
+            width: var(--sidebar-width);
+            background: white;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .feed-header {
+            padding: 15px;
+            background: #eaeaea;
+            font-weight: bold;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .feed-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #888;
+            margin-top: 50px;
+            font-style: italic;
+        }
+
+        /* Individual Post Card */
+        .post-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--accent-color);
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .post-meta {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .post-text { margin-bottom: 10px; line-height: 1.4; }
+        
+        .post-img {
+            max-width: 100%;
+            border-radius: 4px;
+            border: 1px solid #eee;
+            margin-top: 5px;
+        }
+
+        /* Input Area at bottom of Feed */
+        .input-area {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #ddd;
+        }
+
+        .input-group { margin-bottom: 10px; }
+        
+        .input-area input[type="text"], 
+        .input-area input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .input-row { display: flex; gap: 10px; }
+        
+        .submit-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .submit-btn:hover { background-color: #2980b9; }
+
+        /* RIGHT SIDE: Slide Display */
+        .slide-display {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #333;
+            padding: 20px;
+            position: relative;
+        }
+
+        .slide-viewer {
+            width: 90%;
+            height: 80%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Simulated Slide Content */
+        .slide-content {
+            text-align: center;
+            color: #444;
+        }
+        
+        .slide-content h2 { font-size: 3rem; margin-bottom: 1rem; }
+        .slide-content p { font-size: 1.2rem; color: #666; }
+
+        /* Navigation Controls */
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 30px;
+        }
+
+        .nav-btn {
+            background: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .nav-btn:hover { background: var(--accent-color); color: white; }
+        
+        .slide-indicator {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+
+    </style>
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+
+    <header>
+        <h1>TA Dashboard</h1>
+        <div class="upload-btn-wrapper">
+            <button class="btn">Upload PowerPoint (.pptx)</button>
+            <input type="file" id="pptUpload" accept=".pptx, .pdf" onchange="handlePPTUpload(this)" />
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="feed-panel">
+            <div class="feed-header">
+                Discussion Stream
+            </div>
+            
+            <div class="feed-content" id="feedContent">
+                <div class="empty-state">No notes for this slide yet.</div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-group">
+                    <input type="text" id="postText" placeholder="Enter note or question..." />
+                </div>
+                <div class="input-row">
+                    <input type="number" id="targetSlide" placeholder="Slide #" min="1" style="width: 80px;" />
+                    <input type="file" id="postImage" accept="image/*" style="font-size: 0.8rem; padding-top: 5px;" />
+                </div>
+                <button class="submit-btn" onclick="addPost()">Add Note</button>
+            </div>
+        </div>
+
+        <div class="slide-display">
+            <div class="slide-viewer" id="slideViewer">
+                <div class="slide-content">
+                    <h2 id="slideTitle">Slide 1</h2>
+                    <p id="slideDesc">Welcome to the lecture.</p>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="nav-btn" onclick="changeSlide(-1)">❮</button>
+                <div class="slide-indicator">Slide <span id="currentSlideNum">1</span></div>
+                <button class="nav-btn" onclick="changeSlide(1)">❯</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // State Management
+        let currentSlide = 1;
+        const totalSlides = 10; // Simulated total
+        
+        // Database simulation (Object storing posts by slide number)
+        let slideData = {
+            1: [
+                { text: "Welcome everyone! Please upload your questions here.", img: null, time: "10:00 AM" }
+            ],
+            3: [
+                { text: "Clarification on the formula: X = Y + 2", img: null, time: "10:15 AM" }
+            ]
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSlide();
+            renderFeed();
+            
+            // Auto-fill the "Slide #" input with current slide
+            document.getElementById('targetSlide').value = currentSlide;
+        });
+
+        // 1. Navigation Logic
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            
+            if (newSlide >= 1 && newSlide <= totalSlides) {
+                currentSlide = newSlide;
+                
+                // Update Slide Display
+                renderSlide();
+                
+                // Update Feed Sidebar
+                renderFeed();
+                
+                // Update Input Field default
+                document.getElementById('targetSlide').value = currentSlide;
+            }
+        }
+
+        // 2. Render the Simulated Slide
+        function renderSlide() {
+            document.getElementById('currentSlideNum').innerText = currentSlide;
+            
+            // Simulate changing slide content
+            const titles = ["Intro", "Agenda", "The Theory", "Data Analysis", "Key Findings", "Case Study A", "Case Study B", "Discussion", "Q&A", "Conclusion"];
+            const titleText = titles[currentSlide - 1] || "Topic " + currentSlide;
+            
+            document.getElementById('slideTitle').innerText = titleText;
+            document.getElementById('slideDesc').innerText = `Content for slide ${currentSlide}`;
+        }
+
+        // 3. Render the Feed (Filter by Slide)
+        function renderFeed() {
+            const feedContainer = document.getElementById('feedContent');
+            feedContainer.innerHTML = ""; // Clear current feed
+
+            const posts = slideData[currentSlide] || [];
+
+            if (posts.length === 0) {
+                feedContainer.innerHTML = `<div class="empty-state">No notes for Slide ${currentSlide} yet.</div>`;
+                return;
+            }
+
+            posts.forEach(post => {
+                const postDiv = document.createElement('div');
+                postDiv.className = 'post-card';
+                
+                let imgHtml = "";
+                if (post.img) {
+                    imgHtml = `<img src="${post.img}" class="post-img" alt="User upload">`;
+                }
+
+                postDiv.innerHTML = `
+                    <div class="post-meta">
+                        <span>Slide ${currentSlide}</span>
+                        <span>${post.time}</span>
+                    </div>
+                    <div class="post-text">${post.text}</div>
+                    ${imgHtml}
+                `;
+                feedContainer.appendChild(postDiv);
+            });
+            
+            // Auto scroll to bottom
+            feedContainer.scrollTop = feedContainer.scrollHeight;
+        }
+
+        // 4. Handle "Add Note"
+        function addPost() {
+            const textInput = document.getElementById('postText');
+            const slideInput = document.getElementById('targetSlide');
+            const fileInput = document.getElementById('postImage');
+
+            const text = textInput.value;
+            const targetSlideNum = parseInt(slideInput.value) || currentSlide;
+            
+            if (!text && !fileInput.files[0]) {
+                alert("Please enter text or select an image.");
+                return;
+            }
+
+            // Handle Image Reading
+            let imageUrl = null;
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    savePost(targetSlideNum, text, e.target.result);
+                }
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                savePost(targetSlideNum, text, null);
+            }
+        }
+
+        function savePost(slideNum, text, imgData) {
+            if (!slideData[slideNum]) {
+                slideData[slideNum] = [];
+            }
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            slideData[slideNum].push({
+                text: text,
+                img: imgData,
+                time: timeString
+            });
+
+            // Reset inputs
+            document.getElementById('postText').value = "";
+            document.getElementById('postImage').value = "";
+
+            // If we added a post to the CURRENT slide, refresh the view immediately
+            if (slideNum === currentSlide) {
+                renderFeed();
+            } else {
+                alert(`Note added to Slide ${slideNum}`);
+            }
+        }
+
+        // 5. Simulate PPT Upload
+        function handlePPTUpload(input) {
+            if (input.files && input.files[0]) {
+                alert(`File "${input.files[0].name}" uploaded successfully! 
+(Simulation: In a real app, this would parse the PPTX file).`);
+                // Reset to slide 1
+                currentSlide = 1;
+                renderSlide();
+                renderFeed();
+            }
+        }
+    </script>
 </body>
 </html>
